@@ -1,0 +1,110 @@
+{
+  "best_hyperparameters": {
+    "hidden_layer_sizes": [
+      8,
+      4
+    ],
+    "alpha": 0.0001
+  },
+  "val_mse_at_best": 0.2198116209646458,
+  "test_mse_raw_scale": 1619569792742.294,
+  "test_r2": 0.679583087422972,
+  "grid_search_results": [
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.0001,
+      "val_mse": 0.2198116209646458
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.001,
+      "val_mse": 0.22152844302734714
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.01,
+      "val_mse": 0.22110176987651495
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.1,
+      "val_mse": 0.2404638610371209
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.0001,
+      "val_mse": 0.24839160217718043
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.001,
+      "val_mse": 0.24840989837188437
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.01,
+      "val_mse": 0.2488450357471478
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.1,
+      "val_mse": 0.25340140555943563
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.0001,
+      "val_mse": 0.3487817883505282
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.001,
+      "val_mse": 0.3295834078143471
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.01,
+      "val_mse": 0.32000578704964566
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.1,
+      "val_mse": 0.32694494297351306
+    }
+  ]
+}

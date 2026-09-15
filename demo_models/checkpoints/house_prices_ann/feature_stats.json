@@ -1,0 +1,144 @@
+{
+  "numeric_features": {
+    "area": {
+      "mean": 5112.427821522309,
+      "std": 2175.2042174333233,
+      "min": 1650.0,
+      "max": 16200.0,
+      "p25": 3600.0,
+      "p75": 6360.0
+    },
+    "bedrooms": {
+      "mean": 2.9448818897637796,
+      "std": 0.7536621462897707,
+      "min": 1.0,
+      "max": 6.0,
+      "p25": 2.0,
+      "p75": 3.0
+    },
+    "bathrooms": {
+      "mean": 1.2677165354330708,
+      "std": 0.4831173808164146,
+      "min": 1.0,
+      "max": 4.0,
+      "p25": 1.0,
+      "p75": 2.0
+    },
+    "stories": {
+      "mean": 1.79002624671916,
+      "std": 0.8602357384026116,
+      "min": 1.0,
+      "max": 4.0,
+      "p25": 1.0,
+      "p75": 2.0
+    },
+    "parking": {
+      "mean": 0.6876640419947506,
+      "std": 0.867288607639038,
+      "min": 0.0,
+      "max": 3.0,
+      "p25": 0.0,
+      "p75": 1.0
+    }
+  },
+  "categorical_features": {
+    "mainroad": {
+      "categories": [
+        "yes",
+        "no"
+      ],
+      "frequencies": {
+        "yes": 0.8556,
+        "no": 0.1444
+      }
+    },
+    "guestroom": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.8373,
+        "yes": 0.1627
+      }
+    },
+    "basement": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.6562,
+        "yes": 0.3438
+      }
+    },
+    "hotwaterheating": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.9449,
+        "yes": 0.0551
+      }
+    },
+    "airconditioning": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.6929,
+        "yes": 0.3071
+      }
+    },
+    "prefarea": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.7874,
+        "yes": 0.2126
+      }
+    },
+    "furnishingstatus": {
+      "categories": [
+        "semi-furnished",
+        "unfurnished",
+        "furnished"
+      ],
+      "frequencies": {
+        "semi-furnished": 0.4252,
+        "unfurnished": 0.3255,
+        "furnished": 0.2493
+      }
+    }
+  },
+  "target": {
+    "mean": 4680232.519685039,
+    "std": 1795800.9301358522
+  },
+  "model_feature_columns": [
+    "area",
+    "bedrooms",
+    "bathrooms",
+    "stories",
+    "parking",
+    "mainroad_no",
+    "mainroad_yes",
+    "guestroom_no",
+    "guestroom_yes",
+    "basement_no",
+    "basement_yes",
+    "hotwaterheating_no",
+    "hotwaterheating_yes",
+    "airconditioning_no",
+    "airconditioning_yes",
+    "prefarea_no",
+    "prefarea_yes",
+    "furnishingstatus_furnished",
+    "furnishingstatus_semi-furnished",
+    "furnishingstatus_unfurnished"
+  ]
+}
