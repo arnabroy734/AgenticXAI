@@ -1,0 +1,122 @@
+{
+  "best_hyperparameters": {
+    "hidden_layer_sizes": [
+      32,
+      16
+    ],
+    "alpha": 0.001
+  },
+  "val_f1_at_best": 0.6692456479690522,
+  "test_accuracy": 0.6972682489923869,
+  "test_f1": 0.6646825396825397,
+  "grid_search_results": [
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.0001,
+      "val_f1": 0.648363252375924,
+      "val_accuracy": 0.7018800358102059
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.001,
+      "val_f1": 0.6469344608879493,
+      "val_accuracy": 0.7009847806624888
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.01,
+      "val_f1": 0.6598150051387461,
+      "val_accuracy": 0.7036705461056401
+    },
+    {
+      "hidden_layer_sizes": [
+        8,
+        4
+      ],
+      "alpha": 0.1,
+      "val_f1": 0.6542056074766355,
+      "val_accuracy": 0.7018800358102059
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.0001,
+      "val_f1": 0.6299694189602446,
+      "val_accuracy": 0.675022381378693
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.001,
+      "val_f1": 0.6435137895812053,
+      "val_accuracy": 0.6875559534467324
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.01,
+      "val_f1": 0.6346938775510204,
+      "val_accuracy": 0.6794986571172784
+    },
+    {
+      "hidden_layer_sizes": [
+        16,
+        8
+      ],
+      "alpha": 0.1,
+      "val_f1": 0.6564729867482161,
+      "val_accuracy": 0.6982990152193375
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.0001,
+      "val_f1": 0.6621359223300971,
+      "val_accuracy": 0.6884512085944494
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.001,
+      "val_f1": 0.6692456479690522,
+      "val_accuracy": 0.693822739480752
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.01,
+      "val_f1": 0.6471774193548387,
+      "val_accuracy": 0.6866606982990152
+    },
+    {
+      "hidden_layer_sizes": [
+        32,
+        16
+      ],
+      "alpha": 0.1,
+      "val_f1": 0.6610956360259982,
+      "val_accuracy": 0.6732318710832588
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "model_name": "Bank Marketing - Logistic Regression",
+  "job_type": "classification",
+  "num_data_points_analyzed": 50,
+  "num_sample_cases_included": 2,
+  "top_numeric_features": [
+    {
+      "name": "campaign",
+      "sensitivity_score": 0.0734
+    },
+    {
+      "name": "previously_contacted",
+      "sensitivity_score": 0.0729
+    },
+    {
+      "name": "balance",
+      "sensitivity_score": 0.0459
+    },
+    {
+      "name": "previous",
+      "sensitivity_score": 0.0286
+    },
+    {
+      "name": "pdays",
+      "sensitivity_score": 0.0272
+    }
+  ],
+  "top_categorical_features": [
+    {
+      "name": "contact",
+      "sensitivity_score": 0.2035
+    },
+    {
+      "name": "poutcome",
+      "sensitivity_score": 0.171
+    },
+    {
+      "name": "housing",
+      "sensitivity_score": 0.1588
+    },
+    {
+      "name": "month",
+      "sensitivity_score": 0.1105
+    },
+    {
+      "name": "loan",
+      "sensitivity_score": 0.1083
+    }
+  ],
+  "feature_impact_details": [
+    {
+      "feature_name": "campaign",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "previously_contacted",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "balance",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "previous",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "contact",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "poutcome",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "housing",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "month",
+      "feature_type": "categorical"
+    }
+  ]
+}

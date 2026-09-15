@@ -1,0 +1,84 @@
+{
+  "model_name": "Bank Marketing - Random Forest",
+  "job_type": "classification",
+  "num_data_points_analyzed": 50,
+  "num_sample_cases_included": 2,
+  "top_numeric_features": [
+    {
+      "name": "balance",
+      "sensitivity_score": 0.0574
+    },
+    {
+      "name": "campaign",
+      "sensitivity_score": 0.0556
+    },
+    {
+      "name": "pdays",
+      "sensitivity_score": 0.0494
+    },
+    {
+      "name": "age",
+      "sensitivity_score": 0.0441
+    },
+    {
+      "name": "day",
+      "sensitivity_score": 0.0427
+    }
+  ],
+  "top_categorical_features": [
+    {
+      "name": "poutcome",
+      "sensitivity_score": 0.1892
+    },
+    {
+      "name": "month",
+      "sensitivity_score": 0.1534
+    },
+    {
+      "name": "housing",
+      "sensitivity_score": 0.1464
+    },
+    {
+      "name": "loan",
+      "sensitivity_score": 0.1377
+    },
+    {
+      "name": "contact",
+      "sensitivity_score": 0.124
+    }
+  ],
+  "feature_impact_details": [
+    {
+      "feature_name": "balance",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "campaign",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "pdays",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "age",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "poutcome",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "month",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "housing",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "loan",
+      "feature_type": "categorical"
+    }
+  ]
+}

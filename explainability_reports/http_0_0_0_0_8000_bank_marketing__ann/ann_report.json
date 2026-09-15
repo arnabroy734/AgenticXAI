@@ -1,0 +1,84 @@
+{
+  "model_name": "Bank Marketing - 2-layer ANN",
+  "job_type": "classification",
+  "num_data_points_analyzed": 50,
+  "num_sample_cases_included": 2,
+  "top_numeric_features": [
+    {
+      "name": "campaign",
+      "sensitivity_score": 0.0626
+    },
+    {
+      "name": "balance",
+      "sensitivity_score": 0.0593
+    },
+    {
+      "name": "previously_contacted",
+      "sensitivity_score": 0.0589
+    },
+    {
+      "name": "day",
+      "sensitivity_score": 0.0582
+    },
+    {
+      "name": "previous",
+      "sensitivity_score": 0.0581
+    }
+  ],
+  "top_categorical_features": [
+    {
+      "name": "loan",
+      "sensitivity_score": 0.1518
+    },
+    {
+      "name": "poutcome",
+      "sensitivity_score": 0.1483
+    },
+    {
+      "name": "contact",
+      "sensitivity_score": 0.1412
+    },
+    {
+      "name": "month",
+      "sensitivity_score": 0.1361
+    },
+    {
+      "name": "marital",
+      "sensitivity_score": 0.1255
+    }
+  ],
+  "feature_impact_details": [
+    {
+      "feature_name": "campaign",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "balance",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "previously_contacted",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "day",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "loan",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "poutcome",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "contact",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "month",
+      "feature_type": "categorical"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "model_name": "House Price - 2-layer ANN",
+  "job_type": "regression",
+  "num_data_points_analyzed": 50,
+  "num_sample_cases_included": 2,
+  "top_numeric_features": [
+    {
+      "name": "area",
+      "sensitivity_score": 0.0902
+    },
+    {
+      "name": "bathrooms",
+      "sensitivity_score": 0.0772
+    },
+    {
+      "name": "stories",
+      "sensitivity_score": 0.0609
+    },
+    {
+      "name": "parking",
+      "sensitivity_score": 0.0569
+    },
+    {
+      "name": "bedrooms",
+      "sensitivity_score": 0.0263
+    }
+  ],
+  "top_categorical_features": [
+    {
+      "name": "airconditioning",
+      "sensitivity_score": 0.1709
+    },
+    {
+      "name": "mainroad",
+      "sensitivity_score": 0.1561
+    },
+    {
+      "name": "hotwaterheating",
+      "sensitivity_score": 0.1245
+    },
+    {
+      "name": "prefarea",
+      "sensitivity_score": 0.1232
+    },
+    {
+      "name": "basement",
+      "sensitivity_score": 0.1137
+    }
+  ],
+  "feature_impact_details": [
+    {
+      "feature_name": "area",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "bathrooms",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "stories",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "parking",
+      "feature_type": "numeric"
+    },
+    {
+      "feature_name": "airconditioning",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "mainroad",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "hotwaterheating",
+      "feature_type": "categorical"
+    },
+    {
+      "feature_name": "prefarea",
+      "feature_type": "categorical"
+    }
+  ]
+}

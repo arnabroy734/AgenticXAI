@@ -1,0 +1,96 @@
+{
+  "best_hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": null,
+    "min_samples_leaf": 1
+  },
+  "val_f1_at_best": 0.6849593495934959,
+  "test_accuracy": 0.7277205553067622,
+  "test_f1": 0.6859504132231405,
+  "grid_search_results": [
+    {
+      "n_estimators": 100,
+      "max_depth": null,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6774847870182555,
+      "val_accuracy": 0.7153088630259624
+    },
+    {
+      "n_estimators": 100,
+      "max_depth": null,
+      "min_samples_leaf": 5,
+      "val_f1": 0.6783867631851086,
+      "val_accuracy": 0.7215756490599821
+    },
+    {
+      "n_estimators": 100,
+      "max_depth": 5,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6544276457883369,
+      "val_accuracy": 0.7135183527305282
+    },
+    {
+      "n_estimators": 100,
+      "max_depth": 5,
+      "min_samples_leaf": 5,
+      "val_f1": 0.6436285097192225,
+      "val_accuracy": 0.7045658012533572
+    },
+    {
+      "n_estimators": 100,
+      "max_depth": 10,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6773162939297125,
+      "val_accuracy": 0.7287376902417189
+    },
+    {
+      "n_estimators": 100,
+      "max_depth": 10,
+      "min_samples_leaf": 5,
+      "val_f1": 0.6772151898734177,
+      "val_accuracy": 0.7260519247985676
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": null,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6849593495934959,
+      "val_accuracy": 0.7224709042076992
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": null,
+      "min_samples_leaf": 5,
+      "val_f1": 0.6812045690550363,
+      "val_accuracy": 0.7251566696508505
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": 5,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6514161220043573,
+      "val_accuracy": 0.7135183527305282
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": 5,
+      "min_samples_leaf": 5,
+      "val_f1": 0.652267818574514,
+      "val_accuracy": 0.711727842435094
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": 10,
+      "min_samples_leaf": 1,
+      "val_f1": 0.6836518046709129,
+      "val_accuracy": 0.7332139659803044
+    },
+    {
+      "n_estimators": 200,
+      "max_depth": 10,
+      "min_samples_leaf": 5,
+      "val_f1": 0.6771819137749737,
+      "val_accuracy": 0.7251566696508505
+    }
+  ]
+}

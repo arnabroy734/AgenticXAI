@@ -1,0 +1,264 @@
+{
+  "numeric_features": {
+    "age": {
+      "mean": 41.121863799283155,
+      "std": 11.878971810698104,
+      "min": 18.0,
+      "max": 93.0,
+      "p25": 32.0,
+      "p75": 49.0
+    },
+    "balance": {
+      "mean": 1475.8824884792627,
+      "std": 2995.7143810686107,
+      "min": -6847.0,
+      "max": 81204.0,
+      "p25": 116.75,
+      "p75": 1669.25
+    },
+    "day": {
+      "mean": 15.657194060419867,
+      "std": 8.43573889196509,
+      "min": 1.0,
+      "max": 31.0,
+      "p25": 8.0,
+      "p75": 22.0
+    },
+    "campaign": {
+      "mean": 2.5042242703533026,
+      "std": 2.796491313504477,
+      "min": 1.0,
+      "max": 63.0,
+      "p25": 1.0,
+      "p75": 3.0
+    },
+    "pdays": {
+      "mean": 51.90450588837685,
+      "std": 109.42108153500611,
+      "min": -1.0,
+      "max": 854.0,
+      "p25": -1.0,
+      "p75": 40.0
+    },
+    "previous": {
+      "mean": 0.8247567844342037,
+      "std": 2.3129580492602977,
+      "min": 0.0,
+      "max": 58.0,
+      "p25": 0.0,
+      "p75": 1.0
+    },
+    "previously_contacted": {
+      "mean": 0.2560163850486431,
+      "std": 0.43645891070368587,
+      "min": 0.0,
+      "max": 1.0,
+      "p25": 0.0,
+      "p75": 1.0
+    }
+  },
+  "categorical_features": {
+    "job": {
+      "categories": [
+        "management",
+        "blue-collar",
+        "technician",
+        "admin.",
+        "services",
+        "retired",
+        "self-employed",
+        "student",
+        "unemployed",
+        "entrepreneur",
+        "housemaid",
+        "unknown"
+      ],
+      "frequencies": {
+        "management": 0.2343,
+        "blue-collar": 0.1727,
+        "technician": 0.1649,
+        "admin.": 0.1192,
+        "services": 0.0815,
+        "retired": 0.0678,
+        "self-employed": 0.0355,
+        "student": 0.0332,
+        "unemployed": 0.0311,
+        "entrepreneur": 0.0291,
+        "housemaid": 0.0246,
+        "unknown": 0.0063
+      }
+    },
+    "marital": {
+      "categories": [
+        "married",
+        "single",
+        "divorced"
+      ],
+      "frequencies": {
+        "married": 0.5632,
+        "single": 0.3208,
+        "divorced": 0.116
+      }
+    },
+    "education": {
+      "categories": [
+        "secondary",
+        "tertiary",
+        "primary",
+        "unknown"
+      ],
+      "frequencies": {
+        "secondary": 0.4876,
+        "tertiary": 0.3315,
+        "primary": 0.1344,
+        "unknown": 0.0465
+      }
+    },
+    "default": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.985,
+        "yes": 0.015
+      }
+    },
+    "housing": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.5256,
+        "yes": 0.4744
+      }
+    },
+    "loan": {
+      "categories": [
+        "no",
+        "yes"
+      ],
+      "frequencies": {
+        "no": 0.8693,
+        "yes": 0.1307
+      }
+    },
+    "contact": {
+      "categories": [
+        "cellular",
+        "unknown",
+        "telephone"
+      ],
+      "frequencies": {
+        "cellular": 0.7203,
+        "unknown": 0.211,
+        "telephone": 0.0687
+      }
+    },
+    "month": {
+      "categories": [
+        "may",
+        "jul",
+        "aug",
+        "jun",
+        "nov",
+        "apr",
+        "feb",
+        "oct",
+        "jan",
+        "sep",
+        "mar",
+        "dec"
+      ],
+      "frequencies": {
+        "may": 0.2577,
+        "jul": 0.1345,
+        "aug": 0.1336,
+        "jun": 0.1083,
+        "nov": 0.0853,
+        "apr": 0.0838,
+        "feb": 0.0699,
+        "oct": 0.0356,
+        "jan": 0.0294,
+        "sep": 0.0269,
+        "mar": 0.025,
+        "dec": 0.01
+      }
+    },
+    "poutcome": {
+      "categories": [
+        "unknown",
+        "failure",
+        "success",
+        "other"
+      ],
+      "frequencies": {
+        "unknown": 0.744,
+        "failure": 0.111,
+        "success": 0.0965,
+        "other": 0.0485
+      }
+    }
+  },
+  "target": {
+    "positive_class": "yes",
+    "encoding": {
+      "yes": 1,
+      "no": 0
+    }
+  },
+  "model_feature_columns": [
+    "age",
+    "balance",
+    "day",
+    "campaign",
+    "pdays",
+    "previous",
+    "previously_contacted",
+    "job_admin.",
+    "job_blue-collar",
+    "job_entrepreneur",
+    "job_housemaid",
+    "job_management",
+    "job_retired",
+    "job_self-employed",
+    "job_services",
+    "job_student",
+    "job_technician",
+    "job_unemployed",
+    "job_unknown",
+    "marital_divorced",
+    "marital_married",
+    "marital_single",
+    "education_primary",
+    "education_secondary",
+    "education_tertiary",
+    "education_unknown",
+    "default_no",
+    "default_yes",
+    "housing_no",
+    "housing_yes",
+    "loan_no",
+    "loan_yes",
+    "contact_cellular",
+    "contact_telephone",
+    "contact_unknown",
+    "month_apr",
+    "month_aug",
+    "month_dec",
+    "month_feb",
+    "month_jan",
+    "month_jul",
+    "month_jun",
+    "month_mar",
+    "month_may",
+    "month_nov",
+    "month_oct",
+    "month_sep",
+    "poutcome_failure",
+    "poutcome_other",
+    "poutcome_success",
+    "poutcome_unknown"
+  ]
+}
