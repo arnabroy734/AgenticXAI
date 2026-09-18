@@ -20,3 +20,5 @@ outputs/
 .DS_Store
 .idea/
 .vscode/
+demo_models/checkpoints
+demo_models/datasets

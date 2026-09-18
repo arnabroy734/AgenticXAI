@@ -1,9 +1,9 @@
 """
 app.py
 
-Serves both the House Price models (regression) and the Bank Marketing
-models (classification) behind one FastAPI app. Each model gets two
-endpoints, under its own dataset prefix:
+Serves House Price models (regression), Bank Marketing models
+(classification), and BBC News text classification models behind one
+FastAPI app. Each model gets two endpoints, under its own dataset prefix:
 
     POST /house_prices/{model_key}/predict     model_key: "linear" or "ann"
     GET  /house_prices/{model_key}/describe
@@ -11,11 +11,17 @@ endpoints, under its own dataset prefix:
     POST /bank_marketing/{model_key}/predict   model_key: "logistic", "rf", or "ann"
     GET  /bank_marketing/{model_key}/describe
 
-The two datasets have different request schemas (different real-world
-fields), so they get their own Pydantic models and route functions -
-but both share the same generic model-loading and feature-vector-
-building logic underneath, since that logic only depends on
-feature_stats.json's shape, not on which dataset it came from.
+    POST /bbc_news/{model_key}/predict         model_key: "tfidf" or "encoder"
+    GET  /bbc_news/{model_key}/describe
+
+The tabular datasets share generic model-loading and feature-vector-
+building logic (driven entirely by feature_stats.json's shape). BBC
+News is a different modality (a single raw text field, not many named
+features) and multi-class (5 categories, not one positive class), so
+it gets its own loading/prediction logic, returning "confidence" (the
+probability of whichever category got predicted) as its continuous
+output score - the natural multi-class analogue of a binary classifier's
+positive-class probability.
 
 Usage:
     uvicorn app:app --reload
@@ -60,6 +66,21 @@ BANK_MARKETING_MODELS = {
         "checkpoint_dir": os.path.join(CHECKPOINTS_DIR, "bank_marketing_ann"),
         "display_name": "Bank Marketing - 2-layer ANN",
         "job_type": "classification",
+    },
+}
+
+BBC_NEWS_MODELS = {
+    "tfidf": {
+        "checkpoint_dir": os.path.join(CHECKPOINTS_DIR, "bbc_news_tfidf"),
+        "display_name": "BBC News - TF-IDF + Logistic Regression",
+        "job_type": "classification",
+        "model_type": "tfidf",
+    },
+    "encoder": {
+        "checkpoint_dir": os.path.join(CHECKPOINTS_DIR, "bbc_news_encoder"),
+        "display_name": "BBC News - Fine-tuned DistilBERT",
+        "job_type": "classification",
+        "model_type": "encoder",
     },
 }
 
@@ -305,5 +326,151 @@ def describe_bank_marketing(model_key: str):
                 f"('{feature_stats['target']['positive_class']}' - the customer subscribes "
                 f"to a term deposit)."
             ),
+        },
+    }
+
+
+# ---------------------------------------------------------------------
+# BBC News - text classification
+# ---------------------------------------------------------------------
+
+class TextClassificationInput(BaseModel):
+    text: str
+
+
+def _get_by_index(mapping: dict, idx: int):
+    """HF configs can round-trip id2label keys as either int or str
+    depending on serialization path - handle both without guessing."""
+    return mapping.get(idx, mapping.get(str(idx)))
+
+
+def load_bbc_news_model(model_key: str) -> dict:
+    if model_key not in BBC_NEWS_MODELS:
+        raise HTTPException(status_code=404, detail=f"Unknown model_key '{model_key}'")
+
+    config = BBC_NEWS_MODELS[model_key]
+    checkpoint_dir = config["checkpoint_dir"]
+
+    if config["model_type"] == "tfidf":
+        model_path = os.path.join(checkpoint_dir, "model.pkl")
+        vectorizer_path = os.path.join(checkpoint_dir, "vectorizer.pkl")
+        label_stats_path = os.path.join(checkpoint_dir, "label_stats.json")
+
+        if not (os.path.exists(model_path) and os.path.exists(vectorizer_path) and os.path.exists(label_stats_path)):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Model artifacts missing for '{model_key}' at {checkpoint_dir}. Train it first.",
+            )
+
+        model = joblib.load(model_path)
+        vectorizer = joblib.load(vectorizer_path)
+        with open(label_stats_path, "r") as f:
+            label_stats = json.load(f)
+
+        return {"type": "tfidf", "model": model, "vectorizer": vectorizer, "label_stats": label_stats, "config": config}
+
+    # model_type == "encoder"
+    if not os.path.isdir(checkpoint_dir) or not os.listdir(checkpoint_dir):
+        raise HTTPException(
+            status_code=500,
+            detail=f"Model artifacts missing for '{model_key}' at {checkpoint_dir}. Train it first.",
+        )
+
+    try:
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="torch/transformers are not installed on this server, required for the encoder model.",
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint_dir)
+    model.eval()
+
+    return {"type": "encoder", "model": model, "tokenizer": tokenizer, "id2label": model.config.id2label, "config": config}
+
+
+def predict_bbc_news_text(bundle: dict, text: str):
+    if bundle["type"] == "tfidf":
+        X = bundle["vectorizer"].transform([text])
+        probs = bundle["model"].predict_proba(X)[0]
+        classes = bundle["model"].classes_
+        prob_dict = {cls: float(p) for cls, p in zip(classes, probs)}
+        predicted_class = str(classes[probs.argmax()])
+        confidence = float(probs.max())
+        return predicted_class, prob_dict, confidence
+
+    # type == "encoder"
+    import torch
+
+    tokenizer = bundle["tokenizer"]
+    model = bundle["model"]
+    id2label = bundle["id2label"]
+
+    inputs = tokenizer(text, truncation=True, padding=True, max_length=256, return_tensors="pt")
+    with torch.no_grad():
+        logits = model(**inputs).logits[0]
+    probs = torch.softmax(logits, dim=-1).numpy()
+
+    pred_idx = int(probs.argmax())
+    predicted_class = _get_by_index(id2label, pred_idx)
+    prob_dict = {_get_by_index(id2label, i): float(p) for i, p in enumerate(probs)}
+    confidence = float(probs.max())
+
+    return predicted_class, prob_dict, confidence
+
+
+@app.post("/bbc_news/{model_key}/predict")
+def predict_bbc_news(model_key: str, features: TextClassificationInput):
+    bundle = load_bbc_news_model(model_key)
+    predicted_class, prob_dict, confidence = predict_bbc_news_text(bundle, features.text)
+
+    return {
+        "model_key": model_key,
+        "model_name": bundle["config"]["display_name"],
+        "predicted_class": predicted_class,
+        "predicted_probabilities": prob_dict,
+        "confidence": confidence,
+    }
+
+
+@app.get("/bbc_news/{model_key}/describe")
+def describe_bbc_news(model_key: str):
+    bundle = load_bbc_news_model(model_key)
+    config = bundle["config"]
+
+    if bundle["type"] == "tfidf":
+        categories = bundle["label_stats"]["categories"]
+        category_frequencies = bundle["label_stats"]["frequencies"]
+    else:
+        id2label = bundle["id2label"]
+        sorted_keys = sorted(id2label.keys(), key=lambda k: int(k))
+        categories = [id2label[k] for k in sorted_keys]
+        category_frequencies = None  # not tracked in the encoder checkpoint
+
+    example_request = {
+        "text": "The team secured a dramatic victory in the final minutes of the championship match."
+    }
+
+    return {
+        "model_key": model_key,
+        "model_name": config["display_name"],
+        "job_type": config["job_type"],
+        "modality": "text",
+        "input_field": {
+            "name": "text",
+            "field_type": "text",
+            "description": "Raw news article text to classify.",
+        },
+        "categories": categories,
+        "category_frequencies": category_frequencies,
+        "how_to_call": {
+            "predict_endpoint": f"POST /bbc_news/{model_key}/predict",
+            "example_request_body": example_request,
+        },
+        "output": {
+            "field": "confidence",
+            "description": "Probability assigned to the predicted category (the highest value in predicted_probabilities).",
         },
     }
