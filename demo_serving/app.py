@@ -140,29 +140,89 @@ class BankMarketingFeatures(BaseModel):
 # ---------------------------------------------------------------------
 # Generic helpers - shared by both datasets, driven entirely by
 # feature_stats.json's shape rather than any dataset-specific logic.
+#
+# Every model is loaded from disk exactly once, at import time (i.e.
+# when uvicorn starts this app) - not per-request. A model missing its
+# checkpoint (not trained yet) doesn't crash startup; it's just absent
+# from the cache, and any request for it gets the same clear 500 a
+# lazy load would have given, via _get_model_bundle below.
 # ---------------------------------------------------------------------
 
-def load_model_bundle(model_key, registry):
-    if model_key not in registry:
-        raise HTTPException(status_code=404, detail=f"Unknown model_key '{model_key}'")
+# Whitelisted so /describe never leaks training internals (e.g. a full
+# hyperparameter grid search) to a consumer that only wants headline
+# numbers for a UI - "model_name" is renamed to avoid colliding with
+# the endpoint's own model_name field (the encoder's metrics.json has
+# its own, e.g. "distilbert-base-uncased").
+_METRICS_WHITELIST = (
+    "test_r2", "test_mse_raw_scale", "test_accuracy", "test_f1", "test_f1_macro",
+    "val_accuracy", "val_f1_macro", "num_epochs", "best_hyperparameters",
+)
 
-    config = registry[model_key]
+
+def _load_metrics(checkpoint_dir: str) -> dict:
+    metrics_path = os.path.join(checkpoint_dir, "metrics.json")
+    if not os.path.exists(metrics_path):
+        return {}
+
+    with open(metrics_path, "r") as f:
+        full_metrics = json.load(f)
+
+    metrics = {k: full_metrics[k] for k in _METRICS_WHITELIST if k in full_metrics}
+    if "model_name" in full_metrics:
+        metrics["base_model_name"] = full_metrics["model_name"]
+    return metrics
+
+
+def _load_tabular_bundle(config):
     checkpoint_dir = config["checkpoint_dir"]
-
     model_path = os.path.join(checkpoint_dir, "model.pkl")
     stats_path = os.path.join(checkpoint_dir, "feature_stats.json")
 
     if not os.path.exists(model_path) or not os.path.exists(stats_path):
-        raise HTTPException(
-            status_code=500,
-            detail=f"Model artifacts missing for '{model_key}' at {checkpoint_dir}. Train it first.",
-        )
+        return None
 
     model = joblib.load(model_path)
     with open(stats_path, "r") as f:
         feature_stats = json.load(f)
+    metrics = _load_metrics(checkpoint_dir)
 
-    return model, feature_stats, config
+    return (model, feature_stats, config, metrics)
+
+
+def _load_all(registry: dict, loader, dataset_label: str) -> tuple:
+    """Eagerly loads every model_key in registry via loader(config) ->
+    bundle or None (missing artifacts) or raises RuntimeError (a real
+    environment problem, e.g. a missing dependency). Returns
+    (cache, load_errors); load_errors preserves the exact diagnostic
+    message a lazy per-request load would have given."""
+    cache, load_errors = {}, {}
+    for model_key, config in registry.items():
+        try:
+            bundle = loader(config)
+        except RuntimeError as e:
+            load_errors[model_key] = str(e)
+            print(f"WARNING: failed to load {dataset_label}/{model_key}: {e}")
+            continue
+
+        if bundle is None:
+            load_errors[model_key] = (
+                f"Model artifacts missing for '{model_key}' at {config['checkpoint_dir']}. Train it first."
+            )
+            print(f"WARNING: {dataset_label}/{model_key} artifacts missing at {config['checkpoint_dir']} - skipping.")
+            continue
+
+        cache[model_key] = bundle
+        print(f"Loaded {dataset_label}/{model_key} ({config['display_name']})")
+
+    return cache, load_errors
+
+
+def _get_model_bundle(model_key: str, registry: dict, cache: dict, load_errors: dict):
+    if model_key not in registry:
+        raise HTTPException(status_code=404, detail=f"Unknown model_key '{model_key}'")
+    if model_key in cache:
+        return cache[model_key]
+    raise HTTPException(status_code=500, detail=load_errors.get(model_key, "Model failed to load."))
 
 
 def build_feature_vector(input_data: BaseModel, feature_stats):
@@ -222,6 +282,10 @@ def build_features_description(feature_stats):
     return features_description
 
 
+HOUSE_PRICE_CACHE, HOUSE_PRICE_LOAD_ERRORS = _load_all(HOUSE_PRICE_MODELS, _load_tabular_bundle, "house_prices")
+BANK_MARKETING_CACHE, BANK_MARKETING_LOAD_ERRORS = _load_all(BANK_MARKETING_MODELS, _load_tabular_bundle, "bank_marketing")
+
+
 app = FastAPI(title="Demo Model Serving")
 
 
@@ -231,7 +295,7 @@ app = FastAPI(title="Demo Model Serving")
 
 @app.post("/house_prices/{model_key}/predict")
 def predict_house_price(model_key: str, features: HousePriceFeatures):
-    model, feature_stats, config = load_model_bundle(model_key, HOUSE_PRICE_MODELS)
+    model, feature_stats, config, _metrics = _get_model_bundle(model_key, HOUSE_PRICE_MODELS, HOUSE_PRICE_CACHE, HOUSE_PRICE_LOAD_ERRORS)
 
     X = build_feature_vector(features, feature_stats)
     pred_standardized = model.predict(X)[0]
@@ -248,7 +312,7 @@ def predict_house_price(model_key: str, features: HousePriceFeatures):
 
 @app.get("/house_prices/{model_key}/describe")
 def describe_house_price(model_key: str):
-    _, feature_stats, config = load_model_bundle(model_key, HOUSE_PRICE_MODELS)
+    _, feature_stats, config, metrics = _get_model_bundle(model_key, HOUSE_PRICE_MODELS, HOUSE_PRICE_CACHE, HOUSE_PRICE_LOAD_ERRORS)
 
     example_request = {
         "area": 6000,
@@ -270,6 +334,7 @@ def describe_house_price(model_key: str):
         "model_name": config["display_name"],
         "job_type": config["job_type"],
         "modality": "tabular",
+        "metrics": metrics,
         "features": build_features_description(feature_stats),
         "how_to_call": {
             "predict_endpoint": f"POST /house_prices/{model_key}/predict",
@@ -288,7 +353,7 @@ def describe_house_price(model_key: str):
 
 @app.post("/bank_marketing/{model_key}/predict")
 def predict_bank_marketing(model_key: str, features: BankMarketingFeatures):
-    model, feature_stats, config = load_model_bundle(model_key, BANK_MARKETING_MODELS)
+    model, feature_stats, config, _metrics = _get_model_bundle(model_key, BANK_MARKETING_MODELS, BANK_MARKETING_CACHE, BANK_MARKETING_LOAD_ERRORS)
 
     X = build_feature_vector(features, feature_stats)
     positive_probability = float(model.predict_proba(X)[0][1])
@@ -310,7 +375,7 @@ def predict_bank_marketing(model_key: str, features: BankMarketingFeatures):
 
 @app.get("/bank_marketing/{model_key}/describe")
 def describe_bank_marketing(model_key: str):
-    _, feature_stats, config = load_model_bundle(model_key, BANK_MARKETING_MODELS)
+    _, feature_stats, config, metrics = _get_model_bundle(model_key, BANK_MARKETING_MODELS, BANK_MARKETING_CACHE, BANK_MARKETING_LOAD_ERRORS)
 
     example_request = {
         "age": 42,
@@ -336,6 +401,7 @@ def describe_bank_marketing(model_key: str):
         "model_name": config["display_name"],
         "job_type": config["job_type"],
         "modality": "tabular",
+        "metrics": metrics,
         "features": build_features_description(feature_stats),
         "how_to_call": {
             "predict_endpoint": f"POST /bank_marketing/{model_key}/predict",
@@ -368,12 +434,9 @@ def _get_by_index(mapping: dict, idx: int):
     return mapping.get(idx, mapping.get(str(idx)))
 
 
-def load_bbc_news_model(model_key: str) -> dict:
-    if model_key not in BBC_NEWS_MODELS:
-        raise HTTPException(status_code=404, detail=f"Unknown model_key '{model_key}'")
-
-    config = BBC_NEWS_MODELS[model_key]
+def _load_bbc_bundle(config: dict):
     checkpoint_dir = config["checkpoint_dir"]
+    metrics = _load_metrics(checkpoint_dir)
 
     if config["model_type"] == "tfidf":
         model_path = os.path.join(checkpoint_dir, "model.pkl")
@@ -381,38 +444,42 @@ def load_bbc_news_model(model_key: str) -> dict:
         label_stats_path = os.path.join(checkpoint_dir, "label_stats.json")
 
         if not (os.path.exists(model_path) and os.path.exists(vectorizer_path) and os.path.exists(label_stats_path)):
-            raise HTTPException(
-                status_code=500,
-                detail=f"Model artifacts missing for '{model_key}' at {checkpoint_dir}. Train it first.",
-            )
+            return None
 
         model = joblib.load(model_path)
         vectorizer = joblib.load(vectorizer_path)
         with open(label_stats_path, "r") as f:
             label_stats = json.load(f)
 
-        return {"type": "tfidf", "model": model, "vectorizer": vectorizer, "label_stats": label_stats, "config": config}
+        return {
+            "type": "tfidf", "model": model, "vectorizer": vectorizer,
+            "label_stats": label_stats, "config": config, "metrics": metrics,
+        }
 
     # model_type == "encoder"
     if not os.path.isdir(checkpoint_dir) or not os.listdir(checkpoint_dir):
-        raise HTTPException(
-            status_code=500,
-            detail=f"Model artifacts missing for '{model_key}' at {checkpoint_dir}. Train it first.",
-        )
+        return None
 
     try:
         from transformers import AutoTokenizer, AutoModelForSequenceClassification
     except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail="torch/transformers are not installed on this server, required for the encoder model.",
-        )
+        raise RuntimeError("torch/transformers are not installed on this server, required for the encoder model.")
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
     model = AutoModelForSequenceClassification.from_pretrained(checkpoint_dir)
     model.eval()
 
-    return {"type": "encoder", "model": model, "tokenizer": tokenizer, "id2label": model.config.id2label, "config": config}
+    return {
+        "type": "encoder", "model": model, "tokenizer": tokenizer,
+        "id2label": model.config.id2label, "config": config, "metrics": metrics,
+    }
+
+
+BBC_NEWS_CACHE, BBC_NEWS_LOAD_ERRORS = _load_all(BBC_NEWS_MODELS, _load_bbc_bundle, "bbc_news")
+
+
+def get_bbc_news_bundle(model_key: str) -> dict:
+    return _get_model_bundle(model_key, BBC_NEWS_MODELS, BBC_NEWS_CACHE, BBC_NEWS_LOAD_ERRORS)
 
 
 def predict_bbc_news_text(bundle: dict, text: str):
@@ -433,6 +500,10 @@ def predict_bbc_news_text(bundle: dict, text: str):
     id2label = bundle["id2label"]
 
     inputs = tokenizer(text, truncation=True, padding=True, max_length=256, return_tensors="pt")
+    # DistilBERT has no next-sentence-prediction/segment objective, so its
+    # forward() doesn't accept token_type_ids - but the tokenizer includes
+    # one anyway (a generic default from the base tokenizer class).
+    inputs.pop("token_type_ids", None)
     with torch.no_grad():
         logits = model(**inputs).logits[0]
     probs = torch.softmax(logits, dim=-1).numpy()
@@ -447,7 +518,7 @@ def predict_bbc_news_text(bundle: dict, text: str):
 
 @app.post("/bbc_news/{model_key}/predict")
 def predict_bbc_news(model_key: str, features: TextClassificationInput):
-    bundle = load_bbc_news_model(model_key)
+    bundle = get_bbc_news_bundle(model_key)
     predicted_class, prob_dict, confidence = predict_bbc_news_text(bundle, features.text)
 
     return {
@@ -461,7 +532,7 @@ def predict_bbc_news(model_key: str, features: TextClassificationInput):
 
 @app.get("/bbc_news/{model_key}/describe")
 def describe_bbc_news(model_key: str):
-    bundle = load_bbc_news_model(model_key)
+    bundle = get_bbc_news_bundle(model_key)
     config = bundle["config"]
 
     if bundle["type"] == "tfidf":
@@ -482,6 +553,7 @@ def describe_bbc_news(model_key: str):
         "model_name": config["display_name"],
         "job_type": config["job_type"],
         "modality": "text",
+        "metrics": bundle["metrics"],
         "input_field": {
             "name": "text",
             "field_type": "text",
