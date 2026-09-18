@@ -17,11 +17,20 @@ FastAPI app. Each model gets two endpoints, under its own dataset prefix:
 The tabular datasets share generic model-loading and feature-vector-
 building logic (driven entirely by feature_stats.json's shape). BBC
 News is a different modality (a single raw text field, not many named
-features) and multi-class (5 categories, not one positive class), so
-it gets its own loading/prediction logic, returning "confidence" (the
-probability of whichever category got predicted) as its continuous
-output score - the natural multi-class analogue of a binary classifier's
-positive-class probability.
+features), so it gets its own loading/prediction logic.
+
+Every classification endpoint - binary (Bank Marketing) or multi-class
+(BBC News) - returns the same shape: "predicted_class", a full
+"predicted_probabilities" dict (one entry per class, not just a
+positive-class scalar), and "confidence" (the probability of whichever
+class was actually predicted - a display-only value). /describe's
+"output" block additionally names a fixed "reference_class" - the one
+class whose probability stays fixed as the explainability target
+throughout LIME/PDP, since a moving target (whichever class the model
+currently predicts) would produce discontinuous, misleading
+explanations. For Bank Marketing this is the dataset's positive_class;
+for BBC News there's no natural "positive" class, so it's declared
+statically per model_key (the training-set majority class).
 
 Usage:
     uvicorn app:app --reload
@@ -75,12 +84,21 @@ BBC_NEWS_MODELS = {
         "display_name": "BBC News - TF-IDF + Logistic Regression",
         "job_type": "classification",
         "model_type": "tfidf",
+        # No natural "positive class" for a 5-way problem, so the fixed
+        # explainability target is declared here rather than computed at
+        # request time - "sport" is the training-set majority class for
+        # this dataset (23.2%, from bbc_news_tfidf/label_stats.json),
+        # shared by both model_keys since they're trained on the same
+        # data. Declared statically because the encoder checkpoint below
+        # doesn't track label frequencies itself.
+        "reference_class": "sport",
     },
     "encoder": {
         "checkpoint_dir": os.path.join(CHECKPOINTS_DIR, "bbc_news_encoder"),
         "display_name": "BBC News - Fine-tuned DistilBERT",
         "job_type": "classification",
         "model_type": "encoder",
+        "reference_class": "sport",
     },
 }
 
@@ -251,6 +269,7 @@ def describe_house_price(model_key: str):
         "model_key": model_key,
         "model_name": config["display_name"],
         "job_type": config["job_type"],
+        "modality": "tabular",
         "features": build_features_description(feature_stats),
         "how_to_call": {
             "predict_endpoint": f"POST /house_prices/{model_key}/predict",
@@ -272,18 +291,20 @@ def predict_bank_marketing(model_key: str, features: BankMarketingFeatures):
     model, feature_stats, config = load_model_bundle(model_key, BANK_MARKETING_MODELS)
 
     X = build_feature_vector(features, feature_stats)
-    predicted_probability = float(model.predict_proba(X)[0][1])
+    positive_probability = float(model.predict_proba(X)[0][1])
 
     target = feature_stats["target"]
     positive_class = target["positive_class"]
     negative_class = next(k for k in target["encoding"] if k != positive_class)
-    predicted_class = positive_class if predicted_probability >= 0.5 else negative_class
+    predicted_probabilities = {positive_class: positive_probability, negative_class: 1.0 - positive_probability}
+    predicted_class = positive_class if positive_probability >= 0.5 else negative_class
 
     return {
         "model_key": model_key,
         "model_name": config["display_name"],
         "predicted_class": predicted_class,
-        "predicted_probability": predicted_probability,
+        "predicted_probabilities": predicted_probabilities,
+        "confidence": max(predicted_probabilities.values()),
     }
 
 
@@ -314,17 +335,20 @@ def describe_bank_marketing(model_key: str):
         "model_key": model_key,
         "model_name": config["display_name"],
         "job_type": config["job_type"],
+        "modality": "tabular",
         "features": build_features_description(feature_stats),
         "how_to_call": {
             "predict_endpoint": f"POST /bank_marketing/{model_key}/predict",
             "example_request_body": example_request,
         },
         "output": {
-            "field": "predicted_probability",
+            "field": "predicted_probabilities",
+            "reference_class": feature_stats["target"]["positive_class"],
             "description": (
-                f"Predicted probability of the positive class "
-                f"('{feature_stats['target']['positive_class']}' - the customer subscribes "
-                f"to a term deposit)."
+                f"Predicted probability of each class. 'reference_class' "
+                f"('{feature_stats['target']['positive_class']}' - the customer subscribes to a "
+                f"term deposit) is the fixed target that explainability analysis measures "
+                f"sensitivity/impact against."
             ),
         },
     }
@@ -470,7 +494,14 @@ def describe_bbc_news(model_key: str):
             "example_request_body": example_request,
         },
         "output": {
-            "field": "confidence",
-            "description": "Probability assigned to the predicted category (the highest value in predicted_probabilities).",
+            "field": "predicted_probabilities",
+            "reference_class": config["reference_class"],
+            "description": (
+                f"Predicted probability of each category. 'reference_class' "
+                f"('{config['reference_class']}') is the fixed target that explainability "
+                f"analysis measures sensitivity/impact against; 'confidence' on /predict is "
+                f"a separate, display-only value (the probability of whichever category was "
+                f"actually predicted for that input)."
+            ),
         },
     }

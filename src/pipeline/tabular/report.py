@@ -1,11 +1,13 @@
 """
-report_generator.py
+report.py
 
-Step 7: builds the report in two layers:
-  - A deterministic header (model tested, endpoint, task type, data
-    points analyzed, timestamp) and the sample-case input/output details
-    - both generated directly by code, never left for the LLM to
-    transcribe, so exact facts and numbers can never be misstated.
+Builds the report in two layers:
+  - Deterministic chart generation (never delegated to the LLM, so the
+    file path embedded in the report is always correct - see the
+    marker-substitution approach below) and a deterministic header
+    (model tested, endpoint, task type, data points analyzed,
+    timestamp) - both generated directly by code so exact facts and
+    numbers can never be misstated.
   - LLM-written narrative text around three markers, which are
     substituted with real charts (and, for the sample-case marker, real
     input/output details) after the LLM responds - the LLM never
@@ -13,30 +15,78 @@ Step 7: builds the report in two layers:
 """
 
 import os
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
-from .llm_client import call_llm_text
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+
+from ..llm_client import call_llm_text
+from ..report_header import build_header_block  # noqa: F401 - re-exported for backend.py
 
 CHART_MARKER = "{{FEATURE_IMPORTANCE_CHART}}"
 SAMPLE_CASES_MARKER = "{{SAMPLE_CASES}}"
 IMPACT_MARKER = "{{FEATURE_IMPACT_CHARTS}}"
 
 
-def build_header_block(base_url: str, model_name: str, job_type: str, num_points: int) -> str:
-    timestamp = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M")
-    return (
-        "# Model Explainability Report\n\n"
-        "| | |\n"
-        "|---|---|\n"
-        f"| **Model tested** | `{model_name}` |\n"
-        f"| **Endpoint** | `{base_url}` |\n"
-        f"| **Task type** | {job_type} |\n"
-        f"| **Data points analyzed** | {num_points} |\n"
-        f"| **Report generated** | {timestamp} |\n\n"
-        "---\n\n"
-    )
+# ---------------------------------------------------------------------
+# Deterministic chart generation
+# ---------------------------------------------------------------------
 
+def save_importance_plot(top_numeric: list, top_categorical: list, output_path: str,
+                          title: str = "Feature sensitivity ranking"):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    combined = [(name, value, "numeric") for name, value in top_numeric] + \
+               [(name, value, "categorical") for name, value in top_categorical]
+    combined.sort(key=lambda x: x[1])
+
+    names = [c[0] for c in combined]
+    values = [c[1] for c in combined]
+    colors = ["#185FA5" if c[2] == "numeric" else "#7F77DD" for c in combined]
+
+    plt.figure(figsize=(7, 5))
+    plt.barh(names, values, color=colors)
+    plt.xlabel("Normalized sensitivity score (0-1)")
+    plt.title(title)
+
+    legend_elements = [
+        Patch(facecolor="#185FA5", label="Numeric"),
+        Patch(facecolor="#7F77DD", label="Categorical"),
+    ]
+    plt.legend(handles=legend_elements, loc="lower right")
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close()
+
+    return output_path
+
+
+def save_pdp_plot(pdp_result: dict, output_path: str, title: str = None):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    grid_values = pdp_result["grid_values"]
+    avg_preds = pdp_result["average_predictions"]
+
+    plt.figure(figsize=(6, 4))
+    if pdp_result["feature_type"] == "numeric":
+        plt.plot(grid_values, avg_preds, marker="o", color="#185FA5")
+    else:
+        plt.bar([str(v) for v in grid_values], avg_preds, color="#7F77DD")
+
+    plt.xlabel(pdp_result["feature_name"])
+    plt.ylabel("Average predicted output")
+    plt.title(title or f"Impact of {pdp_result['feature_name']} on prediction")
+    plt.tight_layout()
+
+    plt.savefig(output_path, dpi=150)
+    plt.close()
+
+    return output_path
+
+
+# ---------------------------------------------------------------------
+# LLM report body (build_header_block is shared - see ../report_header.py)
+# ---------------------------------------------------------------------
 
 def build_report_json(model_name: str, job_type: str, top_numeric: list, top_categorical: list,
                        num_points: int, pdp_results: list = None, num_sample_cases: int = 0) -> dict:

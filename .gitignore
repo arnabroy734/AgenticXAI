@@ -22,3 +22,4 @@ outputs/
 .vscode/
 demo_models/checkpoints
 demo_models/datasets
+tests
