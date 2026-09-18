@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explainability Demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>AgenticXAI <span class="app-header__subtitle">Explainability Demo</span></h1>
+    <nav class="tabs">
+      <button class="tab-button is-active" data-tab="models">Models</button>
+      <button class="tab-button" data-tab="run-test">Run Test</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============================== Models tab ============================== -->
+    <section id="tab-models" class="tab-panel is-active">
+      <p class="tab-intro">Every dataset this demo knows about, the models trained on it, their test metrics, and a live "try it" form for each.</p>
+      <div id="models-container" class="loading-placeholder">Loading models&hellip;</div>
+    </section>
+
+    <!-- ============================== Run Test tab ============================== -->
+    <section id="tab-run-test" class="tab-panel">
+      <div class="card run-test-card">
+        <h2>Run an explainability test</h2>
+        <div class="run-test-controls">
+          <select id="run-test-select"><option>Loading models&hellip;</option></select>
+          <div class="form-field run-test-num-points-field">
+            <label for="run-test-num-points">Data points</label>
+            <input type="number" id="run-test-num-points" min="1" max="500">
+          </div>
+          <button id="run-test-button" disabled>Run Test</button>
+        </div>
+
+        <div id="run-test-progress" class="run-test-progress is-hidden">
+          <div class="spinner"></div>
+          <span id="run-test-progress-text">Running&hellip;</span>
+        </div>
+
+        <div id="run-test-done" class="run-test-done is-hidden">
+          <span class="badge badge--completed">&check; Completed</span>
+          <button id="run-test-view-dashboard">View Dashboard</button>
+        </div>
+
+        <div id="run-test-error" class="run-test-error is-hidden"></div>
+      </div>
+
+      <div class="card">
+        <h2>Past runs</h2>
+        <div id="history-container" class="loading-placeholder">Loading history&hellip;</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal-backdrop" class="modal-backdrop is-hidden">
+    <div class="modal">
+      <button class="modal__close" id="modal-close">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

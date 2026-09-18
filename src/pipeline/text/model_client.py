@@ -23,6 +23,13 @@ from ..llm_client import call_llm_json
 
 logger = logging.getLogger(__name__)
 
+# Shared across every get_prediction call in this process, for the same
+# reason as tabular/model_client.py's make_predict_fn: without HTTP
+# keep-alive/connection reuse, occlusion (one call per sentence, per
+# n-gram, per document) opens a fresh TCP connection every time, which
+# can exhaust the container's ephemeral port range under load.
+_session = requests.Session()
+
 MIN_SENTENCES_PER_DOCUMENT = 2
 MAX_TOKENS_PER_DOCUMENT = 512
 # ~0.75 words per token is the standard rule of thumb for English text
@@ -78,7 +85,7 @@ def parse_describe_body(describe_body: dict, base_url: str, model_key: str) -> d
 def get_prediction(predict_url: str, text: str) -> tuple:
     """Returns (predicted_class, predicted_probabilities) for one document -
     predicted_class is the model's own argmax over predicted_probabilities."""
-    r = requests.post(predict_url, json={"text": text})
+    r = _session.post(predict_url, json={"text": text})
     r.raise_for_status()
     body = r.json()
     return body["predicted_class"], body["predicted_probabilities"]

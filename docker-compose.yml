@@ -1,0 +1,39 @@
+services:
+  model_serving:
+    build:
+      context: .
+      dockerfile: demo_serving/Dockerfile
+    volumes:
+      - ./demo_models/checkpoints:/app/demo_models/checkpoints:ro
+    networks:
+      - explainability
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_SERVING_URL=http://model_serving:8000
+    volumes:
+      - ./results:/app/results
+    ports:
+      - "8001:8000"
+    depends_on:
+      - model_serving
+    networks:
+      - explainability
+
+  ui:
+    build:
+      context: ./ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+    networks:
+      - explainability
+
+networks:
+  explainability:
+    driver: bridge

@@ -16,6 +16,11 @@ demo_models/checkpoints/*
 outputs/
 *.log
 
+# Web service's per-session test results (PDFs, JSONs, charts) - regenerated
+# at runtime, not committed
+results/*
+!results/.gitkeep
+
 # OS / editor junk
 .DS_Store
 .idea/
@@ -23,3 +28,4 @@ outputs/
 demo_models/checkpoints
 demo_models/datasets
 tests
+results

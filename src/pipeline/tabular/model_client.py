@@ -161,12 +161,22 @@ def make_predict_fn(
     classification, output_field is a dict of per-class probabilities
     and reference_class picks out the one fixed class LIME/PDP explain
     (see probe_model's docstring for why this must be fixed).
+
+    Uses one shared requests.Session for every call this predict_fn
+    ever makes (LIME alone calls it num_lime_samples times per point -
+    e.g. 500 x 100 = 50,000 calls for one run). Without connection
+    reuse, each call opens a brand-new TCP connection; at that volume
+    this exhausts the container's ephemeral port range within seconds
+    (sockets sit in TIME_WAIT for ~60s after closing), surfacing as
+    "Cannot assign requested address" - not a model_serving outage.
     """
+    session = requests.Session()
+
     def predict_fn(raw_dict: dict) -> float:
         payload = dict(raw_dict)
 
         for attempt in range(max_retries + 1):
-            r = requests.post(predict_url, json=payload)
+            r = session.post(predict_url, json=payload)
 
             if r.status_code != 422:
                 break
